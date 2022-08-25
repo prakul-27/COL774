@@ -9,6 +9,7 @@ def read_data():
 def normalize_data(xs, ys):
     mu, sigma = np.mean(xs), np.std(xs)
     norm_x = np.array([(x - mu)/sigma for x in xs])
+    mu, sigma = np.mean(ys), np.std(ys)
     norm_y = np.array([(y - mu)/sigma for y in ys])
     return norm_x, norm_y
 
@@ -24,14 +25,13 @@ def batch_grad_descent(xs, ys, theta, bias, eta = 0.01, epsilon = 0.01, iters = 
         while True:
             n += 1
             new_theta = theta + eta * np.sum([(y - h(x, theta, bias)) * x for x, y in zip(xs, ys)])         
-            if abs(new_theta - theta) < epsilon:
-                print(abs(new_theta-theta))
+            if abs(new_theta - theta) < epsilon:                
                 break
             theta = new_theta
             if n % 5 == 0:
-                print('theta = ')
+                print('theta =', end=' ')
                 print(theta, end=',')
-                print('cost = ')
+                print('cost =', end= ' ')
                 print(cost(xs, ys, theta, bias))
     else:
         for i in range(iters):
@@ -45,7 +45,7 @@ def batch_grad_descent(xs, ys, theta, bias, eta = 0.01, epsilon = 0.01, iters = 
 if __name__ == '__main__':
     xs,ys = read_data()
     xs,ys = normalize_data(xs, ys)
-    theta, bias = 0.0, 1.0
+    theta, bias = 0.0, 0.01
     theta = batch_grad_descent(xs, ys, theta, bias, iters = 1000, which=0, eta=0.005, epsilon=1/1e15)
     print('final theta = '+str(theta))
     print('final cost = '+str(cost(xs, ys, theta, bias)))
