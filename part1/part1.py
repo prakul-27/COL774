@@ -45,7 +45,7 @@ def batch_grad_descent(xs, ys, theta, bias, eta = 0.01, epsilon = 0.01, iters = 
 if __name__ == '__main__':
     xs,ys = read_data()
     xs,ys = normalize_data(xs, ys)
-    theta, bias = 0.0, 0.01
+    theta, bias = 0.0, -0.01
     theta = batch_grad_descent(xs, ys, theta, bias, iters = 1000, which=0, eta=0.005, epsilon=1/1e15)
     print('final theta = '+str(theta))
     print('final cost = '+str(cost(xs, ys, theta, bias)))
