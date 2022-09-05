@@ -1,8 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\part1"
+    "\\part1",
+    "\\part2"
   ],
-  "SelectedNode": "\\part1\\surface_plots.py",
+  "SelectedNode": "\\part2\\part2.py",
   "PreviewInSolutionExplorer": false
 }
