@@ -39,7 +39,7 @@ def batch_grad_descent(xs, ys, theta, bias, eta = 0.01, epsilon = 0.01, iters = 
             print(theta, end=',')
             print('cost =', end= ' ')
             print(cost(xs, ys, theta, bias))    
-    with open('train_data.csv', w) as csv_file:
+    #with open('train_data.csv', w) as csv_file:
         
     return theta, bias
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     xs,ys = read_data()
     xs,ys = normalize_data(xs, ys)
     theta, bias = 0.0, 0.0
-    theta, bias = batch_grad_descent(xs, ys, theta, bias, iters = 1000, which=0, eta=0.005, epsilon=1/1e15)
+    theta, bias = batch_grad_descent(xs, ys, theta, bias, iters = 1000, eta=0.005, epsilon=1/1e15)
     print('final theta = '+str(theta))
     print('final_bias = '+str(bias))
     print('final cost = '+str(cost(xs, ys, theta, bias)))
