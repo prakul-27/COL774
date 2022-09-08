@@ -1,26 +1,30 @@
-import part1 as lr
-import plotly.graph_objects as go
+import pandas as pd
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
 import numpy as np
+import part1 as prt1
+import collections
 
-# theta range
-theta0_vals = np.linspace(0,1,100)
-theta1_vals = np.linspace(-1,1,100)
-J_vals = np.zeros((len(theta0_vals), len(theta1_vals)))
+xs, ys = prt1.read_data()
+theta1s = np.linspace(-1e-2,1e-2,10)
+theta0s = np.linspace(0,1,10)
 
-# compute cost for each combination of theta
-xs, ys = lr.read_data()
-xs, ys = lr.normalize_data(xs, ys)
+xs, ys = prt1.normalize_data(xs, ys)
+Theta1, Theta0 = np.meshgrid(theta1s, theta0s)
+Js = np.array([prt1.cost(xs, ys, theta1, theta0) for theta1, theta0 in zip(np.ravel(Theta1), np.ravel(Theta0))])
+J = Js.reshape(Theta1.shape)
 
-c1=0; c2=0
-for i in theta0_vals:
-    for j in theta1_vals:        
-        J_vals[c1][c2] = lr.cost(xs, ys, j, i)
-        c2=c2+1
-    c1=c1+1
-    c2=0 # reinitialize to 0
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.plot_surface(Theta1, Theta0, J, rstride=1, cstride=1, color='b', alpha=0.5)
 
-fig = go.Figure(data=[go.Surface(x=theta0_vals, y=theta1_vals, z=J_vals)])
-fig.update_layout(title='Loss function for different thetas', autosize=True,
-                 xaxis_title='theta0', 
-                 yaxis_title='theta1')
-fig.show()
+ax.set_xlabel('theta1')
+ax.set_ylabel('theta0')
+ax.set_zlabel('cost')
+
+#plt.show()
+
+df = pd.read_csv('vals.csv')
+theta, bias, cost = df['theta'].values, df['bias'].values, df['cost']
+ax.plot(theta, bias, cost, 'red')
+plt.show()

@@ -23,8 +23,8 @@ def newton(epsilon=0.1):
     def H_inv(theta):
         D = np.zeros((len(X), len(X)))
         for i in range(len(X)):
-            z = np.matmul(np.transpose(theta), np.reshape(X[i], (3,1)))                          
-            D[i][i] = g(z)*(1-g(z))        
+            z = np.matmul(np.transpose(theta), np.reshape(X[i], (3,1)))            
+            D[i][i] = g(z)*(1-g(z))                
         H = np.matmul(np.matmul(np.transpose(X), D), X)        
         return np.linalg.inv(H)
 
