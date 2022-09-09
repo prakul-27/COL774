@@ -32,16 +32,32 @@ def gda(one):
     mu_1 = mu_1/cnt
     np.reshape(mu_0, (2,1))
     np.reshape(mu_1, (2,1))    
-    for x_, y in zip(X, Y):
-        x = np.reshape(x_, (2,1))        
+    for x_, y in zip(X, Y):        
+        x = np.reshape(x_, (2,1))                        
         if y == one:
             sigma += np.matmul(x - mu_1, np.transpose(x - mu_1))            
         else:
             sigma += np.matmul(x - mu_0, np.transpose(x - mu_0))                    
     sigma *= (1/m)
+    print("phi", phi)
+    print("mean_0", mu_0)
+    print("mean_1", mu_1)
+    print("cov matrix", sigma)
     return phi, mu_0, mu_1, sigma
 
-def gda_diff_cov(one):
+def gda_diff_cov(one, train_path_X, train_path_Y):
+    with open(train_path_X, 'r') as datFile:   
+        X = []
+        for data in datFile:
+            X.append([float(data.split()[0]), float(data.split()[1])])        
+        X = np.array(X)
+
+    with open(train_path_Y, 'r') as datFile:
+        Y = np.array([label.strip() for label in datFile])
+
+    for i in range(2):
+        X[:,i] = (X[:, i] - np.mean(X[:,i]))/np.std(X[:,i])
+
     m = len(X)
     phi = (1/m) * sum([1 if y == one else 0 for y in Y])
     mu_0, mu_1, sigma0, sigma1 = np.zeros(2), np.zeros(2), np.zeros((2,2)), np.zeros((2,2)) 
@@ -72,7 +88,7 @@ def gda_diff_cov(one):
         if y == one:
             sigma1 += np.matmul(x - mu_1, np.transpose(x - mu_1))                                       
             cnt += 1
-    sigma1 *= (1/cnt)
+    sigma1 *= (1/cnt)    
     return phi, mu_0, mu_1, sigma0, sigma1
 
 def plot_cov_same():
@@ -103,8 +119,9 @@ def plot_cov_same():
     # x2 = (c3 - x1*c1)/c2
     x1 = np.linspace(-3,3, 100)
     x2 = (c3 - x1*c1)/c2
-    plt.plot(x1, x2, color='black')
-    plt.show()
+    plt.plot(x1, x2, color='green')
+    phi, mu_0, mu_1, sigma0, sigma1 = gda_diff_cov('Alaska')
+    print(phi, mu_0, mu_1, sigma0, sigma1)    
 
 def plot_cov_diff():
     phi, mu_0, mu_1, sigma0, sigma1 = gda_diff_cov('Alaska')
@@ -142,5 +159,3 @@ def plot_cov_diff():
     plt.plot(x1, x21, color='black')
     #plt.plot(x1, x22, color='green')
     plt.show()
-
-plot_cov_diff()

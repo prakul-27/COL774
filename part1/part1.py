@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 import csv
 
-def read_data():
-    xs = pd.read_csv('data/linearX.csv').values
-    ys = pd.read_csv('data/linearY.csv').values
+def read_data(train_path_x, train_path_y):
+    xs = pd.read_csv(train_path_x).values
+    ys = pd.read_csv(train_path_y).values
     return xs.ravel(), ys.ravel()
 
 def normalize_data(xs, ys):
@@ -42,11 +42,29 @@ def batch_grad_descent(xs, ys, theta, bias, eta = 0.01, epsilon = 0.01, iters = 
                 print(cost(xs, ys, theta, bias))                                       
     return theta, bias
 
-if __name__ == '__main__':
-    xs,ys = read_data()
+def train(train_path_x, train_path_y):
+    xs,ys = read_data(train_path_x, train_path_y)
     xs,ys = normalize_data(xs, ys)
     theta, bias = 0.0, 0.0
-    theta, bias = batch_grad_descent(xs, ys, theta, bias, iters = 1000, eta=0.1, epsilon=1/1e15)
+    theta, bias = batch_grad_descent(xs, ys, theta, bias, iters = 1000, eta=0.01, epsilon=1/1e15)
+    #print('final theta = '+str(theta))
+    #print('final_bias = '+str(bias))
+    #print('final cost = '+str(cost(xs, ys, theta, bias)))
+    return theta, bias
+
+def run(train_path_x, train_path_y, test_path_x):
+    theta, bias = train(train_path_x, train_path_y)
+    xs = pd.read_csv(test_path_x)
+    xs, _ = normalize_data(xs, [1,2,3])
+    with open('result_1.txt', 'w', newline='') as file:
+        for x in xs:
+            file.write(str(h(x))+"\n")        
+
+if __name__ == '__main__':
+    xs,ys = read_data('data/linearX.csv','data/linearY.csv')
+    xs,ys = normalize_data(xs, ys)
+    theta, bias = 0.0, 0.0
+    theta, bias = batch_grad_descent(xs, ys, theta, bias, iters = 1000, eta=0.025, epsilon=1/1e15)
     print('final theta = '+str(theta))
     print('final_bias = '+str(bias))
     print('final cost = '+str(cost(xs, ys, theta, bias)))

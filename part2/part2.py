@@ -57,7 +57,7 @@ def stochastic_gradient_descent(r, eta=0.001, epsilon=0.001, conv_iters=1000):
     iters, cur_theta_sum, prev_avg_theta = 0, np.zeros(3,), np.zeros(3,)
         		
     
-    with open('r1000000.csv', 'w', newline='') as csv_file:        
+    with open('r100.csv', 'w', newline='') as csv_file:        
         csv_writer = csv.DictWriter(csv_file, fieldnames=['theta0', 'theta1', 'theta2', 'cost'])	    
         csv_writer.writeheader()       
         while not has_converged:                        
@@ -80,8 +80,6 @@ def stochastic_gradient_descent(r, eta=0.001, epsilon=0.001, conv_iters=1000):
                     prev_avg_theta = cur_avg_theta
                     cur_theta_sum = np.zeros(3,)                
         return theta, total_iters
-
-print(stochastic_gradient_descent(1000000, epsilon = 0.00001, conv_iters=1))
 
 # models
 # r = 1, epsilon = 1, conv_iters=100, iters = 11700, conv_val = [2.90096727, 1.00398103, 1.9958781 ]
@@ -111,3 +109,10 @@ def test_with_original():
     Y = df['Y'].ravel()
     return cost(theta, X, Y)
 
+def run(train_path_x, train_path_y, test_path_x):    
+    theta = np.array([2.97415026, 1.00340122, 1.99621081])
+    xs = pd.read_csv(test_path_x).values
+    with open('result_2.txt', 'w') as file:
+        for x in xs:
+            h = theta[0] + x[1]*theta[1] + x[2]*theta[2]
+            f.write(str(h)+"\n")            

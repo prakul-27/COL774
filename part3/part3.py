@@ -10,10 +10,10 @@ def h(theta, X):
 def cost(theta, X, Y):
     return np.matmul(np.transpose(Y), np.log(h(theta, X))) + np.matmul(np.transpose(1-Y), np.log(1-h(theta, X)))
 
-def newton(epsilon=0.1):
-    df = pd.read_csv('data\logisticX.csv')    
+def newton(train_path_X, train_path_Y, epsilon=0.1):
+    df = pd.read_csv(train_path_X, header=None)    
     X = np.array([[1.0, x1, x2] for x1, x2 in df.values])
-    Y = pd.read_csv('data\logisticY.csv').values    
+    Y = pd.read_csv(train_path_Y, header=None).values    
     
     #data normalize
     for i in range(1, 3):
@@ -32,13 +32,20 @@ def newton(epsilon=0.1):
         return np.transpose(np.matmul(np.transpose(Y - h(theta, X)), X))
 
     while True:        
-        new_theta = theta + np.matmul(H_inv(theta), grad(theta))
-        diff = np.sum([(old-new)**2 for old, new in zip(theta, new_theta)])
-        print(diff)
+        new_theta = np.matmul(H_inv(theta), grad(theta)) 
+        diff = np.sum([(old-new)**2 for old, new in zip(theta, new_theta)])        
         if diff < epsilon:
             break
         theta = new_theta        
 
     return theta
 
-print(newton())
+print(newton('data/logisticX.csv', 'data/logisticY.csv'))
+
+def run(train_path_X, train_path_Y, test_path_X):
+    theta = newton(train_path_X, train_path_Y)
+    df = pd.read_csv(test_path_X, header=None)    
+    X = np.array([[1.0, x1, x2] for x1, x2 in df.values])
+    with open('result_3.txt', 'w') as file:
+        for x in X:
+            file.write(str(h(theta, x)+"\n"))
