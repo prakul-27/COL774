@@ -77,19 +77,40 @@ print(min(phi_y_0))
 
 def predict(text):
     text = text.split(' ')
-    num = 1.0
-    den1, den0 = 1.0, 1.0
+    prob = 0.0
+    num = 0.0
+    den0, den1 = 1.0, 1.0
     for word in text:
         w = ""
-        for a in word.lower():
-            if a in alphabet:
-                w += a
-            else:
+        for a in word:
+            if a not in alphabet:
                 break
-        num *= phi_y_1[index[w]]
+            w += a
+        num += np.log(phi_y_1[index[w]])
+        den0 *= phi_y_0[index[w]]
         den1 *= phi_y_1[index[w]]
-        den0 *= phi_y_0[index[w]]        
-    num *= phi_y
-    den = den1*phi_y + den0*(1-phi_y)
-    prob = num/den
-    return 0 if prob <= 0.5 else 1
+    num += np.log(phi_y)
+    den = np.log(den1*phi_y + den0*(1-phi_y))
+    prob = num - den
+    return 0 if prob <= np.log(0.5) else 1
+
+def accuracy(path_neg, path_pos):
+    pos_txt_files = [os.path.normpath(i) for i in glob.glob(path_pos)]
+    neg_txt_files = [os.path.normpath(i) for i in glob.glob(path_neg)]
+    
+    correct_positive, correct_negative = 0, 0    
+    def correct(files, k):
+        ans = 0
+        for txt_files in files:
+            with open(txt_files, 'r', encoding='utf8') as file:
+                text = file.read()
+                if predict(text) == k:
+                    ans += 1
+        return ans
+
+    correct_positive += correct(pos_txt_files,1)
+    correct_negative += correct(neg_txt_files,0)
+
+    return (correct_negative + correct_positive) / (len(pos_txt_files) + len(neg_txt_files))
+
+print(accuracy("part1_data/part1_data/train/neg/*.txt", "part1_data/part1_data/train/pos/*.txt"))
