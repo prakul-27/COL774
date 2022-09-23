@@ -85,10 +85,15 @@ def predict(text):
         for a in word:
             if a not in alphabet:
                 break
-            w += a
-        num += np.log(phi_y_1[index[w]])
-        den0 *= phi_y_0[index[w]]
-        den1 *= phi_y_1[index[w]]
+            w += a        
+        if w in index:           
+            num += np.log(phi_y_1[index[w]])
+            den0 *= phi_y_0[index[w]]
+            den1 *= phi_y_1[index[w]]
+        else:
+            den0 *= 7.9987202e-05
+            den1 *= 7.9987202e-05
+            num += np.log(7.9987202e-05)
     num += np.log(phi_y)
     den = np.log(den1*phi_y + den0*(1-phi_y))
     prob = num - den
@@ -114,3 +119,4 @@ def accuracy(path_neg, path_pos):
     return (correct_negative + correct_positive) / (len(pos_txt_files) + len(neg_txt_files))
 
 print(accuracy("part1_data/part1_data/train/neg/*.txt", "part1_data/part1_data/train/pos/*.txt"))
+print(accuracy("part1_data/part1_data/test/neg/*.txt", "part1_data/part1_data/test/pos/*.txt"))
