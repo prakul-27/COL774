@@ -8,6 +8,7 @@ from wordcloud import WordCloud, STOPWORDS
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize
+from nltk.util import ngrams
 
 
 alphabet = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',"'"]
@@ -29,11 +30,11 @@ def get_vocab(neg_txt_files, pos_txt_files, remove_stopwords=False, stemming=Fal
                         if a in alphabet:
                             w += a
                         else:
-                            break
-                    if remove_stopwords and w in stopwords:
-                        continue                    
+                            break                    
                     if stemming:
                         w = ps.stem(w)
+                    if remove_stopwords and w in stopwords:
+                        continue                    
                     vocab.add(w)
                     if w not in fmap:
                         fmap[w] = 0
@@ -65,11 +66,11 @@ def train(path_neg, path_pos, remove_stopwords=False, stemming=False):
                 if a in alphabet:
                     w += a
                 else:
-                    break
-            if remove_stopwords and w in stopwords:
-                continue
+                    break            
             if stemming:
                 w = ps.stem(w)
+            if remove_stopwords and w in stopwords:
+                continue
             x[index[w]] = 1
         return x
 
@@ -87,13 +88,109 @@ def train(path_neg, path_pos, remove_stopwords=False, stemming=False):
     phi_y = len(pos_txt_files)/m
     return vocab, index, fmap, phi_y_0, phi_y_1, phi_y
 
-vocab, index, fmap, phi_y_0, phi_y_1, phi_y = train("part1_data/part1_data/train/neg/*.txt", "part1_data/part1_data/train/pos/*.txt", remove_stopwords=True, stemming=True)
+def clean(text, remove_stopwords=False, stemming=False):
+    if stemming:
+        ps = PorterStemmer()
+    clean_text = ''
+    for w in text:
+        if w.lower() in alphabet:
+            clean_text += w.lower()
+        else:
+            clean_text += ' '
+    clean_text = clean_text.replace('br', ' ')
+    simplified_text = ''
+    for word in clean_text.split():
+        if stemming:
+            word = ps.stem(word)
+        if remove_stopwords and word in stopwords:
+            continue
+        simplified_text += word
+        simplified_text += ' '
+    return simplified_text
+
+def get_ngrams(clean_text, n):
+            return list(ngrams(clean_text.split(), n))
+
+def train_unigram_and_bigram(path_neg, path_pos, remove_stopwords=False, stemming=False):
+    pos_txt_files = [os.path.normpath(i) for i in glob.glob(path_pos)]
+    neg_txt_files = [os.path.normpath(i) for i in glob.glob(path_neg)]    
+    
+    if stemming:
+        ps = PorterStemmer()        
+
+    def get_vocab(neg_txt_files, pos_txt_files, remove_stopwords=False, stemming=False):
+        vocab = set([])
+        fmap = {}
+        if stemming:
+            ps = PorterStemmer()                            
+        
+        def make_vocab(names):
+            for txt_files in names:
+                with open(txt_files, 'r', encoding='utf8') as file:
+                    text = file.read()
+                    clean_text = clean(text, remove_stopwords, stemming)
+                    for bigram in get_ngrams(clean_text, 2):
+                        vocab.add(bigram)
+                        if bigram not in fmap:
+                            fmap[bigram] = 0
+                        fmap[bigram] += 1
+                    for unigram in get_ngrams(clean_text, 1):
+                        vocab.add(unigram)
+                        if unigram not in fmap:
+                            fmap[unigram] = 0
+                        fmap[unigram] += 1
+            return
+        make_vocab(neg_txt_files)
+        make_vocab(pos_txt_files)
+        return vocab, fmap 
+    
+    vocab, fmap = get_vocab(neg_txt_files, pos_txt_files, remove_stopwords, stemming)
+    index = {}    
+    for i, word in enumerate(vocab):
+        index[word] = i        
+    
+    m = len(pos_txt_files) + len(neg_txt_files)
+
+    def feature_vector(text, remove_stopwords=False, stemming=False):
+        x = np.zeros((len(vocab), 1))
+        clean_text = clean(text, remove_stopwords, stemming)
+        for unigram in get_ngrams(clean_text, 1):
+            x[index[unigram]] = 1
+        for bigram in get_ngrams(clean_text, 2):
+            x[index[bigram]] = 1
+        return x
+
+    def find_phi(files, remove_stopwords=False, stemming=False):
+        phi = np.zeros((len(vocab), 1))
+        for txt_file in files:
+            with open(txt_file, 'r', encoding='utf8') as file:
+                text = file.read()
+                phi += feature_vector(text, remove_stopwords, stemming)
+        phi += 1
+        phi *= 1/(len(files)+2)
+        return phi
+    phi_y_0 = find_phi(neg_txt_files, remove_stopwords, stemming)
+    phi_y_1 = find_phi(pos_txt_files, remove_stopwords, stemming)
+    phi_y = len(pos_txt_files)/m
+    
+    return vocab, index, fmap, phi_y_0, phi_y_1, phi_y
+
+#vocab, index, fmap, phi_y_0, phi_y_1, phi_y = train("part1_data/part1_data/train/neg/*.txt", "part1_data/part1_data/train/pos/*.txt", remove_stopwords=True, stemming=True)
 #print(max(fmap.values()))
 #print(min(fmap.values()))
 #print(max(phi_y_1))
 #print(min(phi_y_1))
 #print(max(phi_y_0))
 #print(min(phi_y_0))
+
+vocab, index, fmap, phi_y_0, phi_y_1, phi_y = train_unigram_and_bigram("part1_data/part1_data/train/neg/*.txt", "part1_data/part1_data/train/pos/*.txt", remove_stopwords=True, stemming=True)
+print(max(fmap.values()))
+print(min(fmap.values()))
+print(max(phi_y_1))
+print(min(phi_y_1))
+print(max(phi_y_0))
+print(min(phi_y_0))
+
 
 def predict(text, remove_stopwords=False, stemming=False):
     if stemming:
@@ -107,11 +204,11 @@ def predict(text, remove_stopwords=False, stemming=False):
         for a in word:
             if a not in alphabet:
                 break
-            w += a        
-        if remove_stopwords and w in stopwords:
-            continue
+            w += a  
         if stemming:
             w = ps.stem(w)
+        if remove_stopwords and w in stopwords:
+            continue        
         if w in index:           
             num += np.log(phi_y_1[index[w]])
             den0 *= phi_y_0[index[w]]
@@ -260,6 +357,48 @@ def confusion_matrix_random_prediction(path_neg, path_pos):
             true_negatives += 1
     return true_positives, false_positives, true_negatives, false_negatives
 
+def predict_bigram(text, remove_stopwords=False, stemming=False):
+    if stemming:
+        ps = PorterStemmer()
+    prob = 0.0
+    num = 0.0
+    den0, den1 = 1.0, 1.0
+    clean_text = clean(text, remove_stopwords, stemming)
+    ngrams = get_ngrams(clean_text, 1)
+    ngrams += get_ngrams(clean_text, 2)
+    for word in ngrams:        
+        if word in index:           
+            num += np.log(phi_y_1[index[word]])
+            den0 *= phi_y_0[index[word]]
+            den1 *= phi_y_1[index[word]]
+        else:
+            den0 *= 7.9987202e-05
+            den1 *= 7.9987202e-05
+            num += np.log(7.9987202e-05)
+    num += np.log(phi_y)
+    den = np.log(den1*phi_y + den0*(1-phi_y))
+    prob = num - den
+    return 0 if prob <= np.log(0.5) else 1
+
+def accuracy_bigram(path_neg, path_pos, remove_stopwords=False, stemming=False):
+    pos_txt_files = [os.path.normpath(i) for i in glob.glob(path_pos)]
+    neg_txt_files = [os.path.normpath(i) for i in glob.glob(path_neg)]
+    
+    correct_positive, correct_negative = 0, 0    
+    def correct(files, k):
+        ans = 0
+        for txt_files in files:
+            with open(txt_files, 'r', encoding='utf8') as file:
+                text = file.read()
+                if predict_bigram(text, remove_stopwords, stemming) == k:
+                    ans += 1
+        return ans
+
+    correct_positive += correct(pos_txt_files,1)
+    correct_negative += correct(neg_txt_files,0)
+
+    return (correct_negative + correct_positive) / (len(pos_txt_files) + len(neg_txt_files))
+
 #print(accuracy("part1_data/part1_data/train/neg/*.txt", "part1_data/part1_data/train/pos/*.txt")) #83.072%
 #print(accuracy("part1_data/part1_data/test/neg/*.txt", "part1_data/part1_data/test/pos/*.txt")) #77.274%
 
@@ -273,6 +412,13 @@ def confusion_matrix_random_prediction(path_neg, path_pos):
 #print(confusion_matrix_random_prediction("part1_data/part1_data/test/neg/*.txt", "part1_data/part1_data/test/pos/*.txt")) #(5025, 4975, 2457, 2543)
 #print(confusion_matrix_all_positive("part1_data/part1_data/test/neg/*.txt", "part1_data/part1_data/test/pos/*.txt")) #(10000, 0, 0, 5000) 
 
-#with stemming and stopword removal
+#with stopword removal and stemming
 #print(accuracy("part1_data/part1_data/train/neg/*.txt", "part1_data/part1_data/train/pos/*.txt", remove_stopwords=True, stemming=True)) #85.60%
 #print(accuracy("part1_data/part1_data/test/neg/*.txt", "part1_data/part1_data/test/pos/*.txt", remove_stopwords=True, stemming=True)) #81.18%
+
+#with stemming and stopword removal
+#train accuracy = 85.2%
+#test accuracy  = 80.6%
+
+print(accuracy_bigram("part1_data/part1_data/train/neg/*.txt", "part1_data/part1_data/train/pos/*.txt", remove_stopwords=True, stemming=True)) #63.75%
+print(accuracy_bigram("part1_data/part1_data/test/neg/*.txt", "part1_data/part1_data/test/pos/*.txt", remove_stopwords=True, stemming=True)) #71.76%
